@@ -13,7 +13,7 @@ export async function analyzeWithGroq(prompt) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "mixtral-8x7b-32768",
+        model: "llama-3.1-70b-versatile",
         messages: [
           {
             role: "user",
