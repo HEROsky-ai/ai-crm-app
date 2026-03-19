@@ -1,5 +1,6 @@
 import { analyzeWithOpenRouter } from "./openrouter";
 import { analyzeWithGroq } from "./groq";
+import { buildPrompt } from "../prompt";
 
 export async function runAI(prompt) {
   const provider = process.env.AI_PROVIDER || 'groq';
@@ -30,4 +31,4 @@ export async function analyzeWithAI(data, promptTemplate = null) {
   }
 }
 
-export { analyzeWithOpenRouter, buildPrompt };
+export { analyzeWithOpenRouter, analyzeWithGroq, buildPrompt };
