@@ -4,6 +4,7 @@ import Link from 'next/link';
 
 export default function Home() {
   const [result, setResult] = useState(null);
+  const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState([]);
   const [chatText, setChatText] = useState("");
@@ -74,10 +75,11 @@ export default function Home() {
     e.preventDefault();
 
     if (!chatText.trim() && images.length === 0) {
-      alert('請輸入文字或選擇圖片');
+      setError('請輸入文字或選擇圖片');
       return;
     }
 
+    setError(null);
     setLoading(true);
     try {
       const res = await fetch("/api/analyze", {
@@ -92,7 +94,13 @@ export default function Home() {
       });
 
       const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || `API 錯誤 (${res.status}): 分析失敗，請檢查 OpenRouter API 密鑰`);
+      }
+
       setResult(data);
+      setError(null);
       
       // 保存到 localStorage 用於離線訪問
       const record = {
@@ -108,7 +116,9 @@ export default function Home() {
       setChatText("");
       setImages([]);
     } catch (error) {
-      alert('錯誤: ' + error.message);
+      console.error('分析錯誤:', error);
+      setError(error.message || '分析失敗，請稍後重試');
+      setResult(null);
     } finally {
       setLoading(false);
     }
@@ -202,6 +212,38 @@ export default function Home() {
           {loading ? '分析中...' : '開始分析'}
         </button>
       </form>
+
+      {/* 錯誤信息 */}
+      {error && (
+        <div style={{ 
+          marginTop: '30px', 
+          maxWidth: '600px', 
+          margin: '30px auto',
+          background: '#fff1f0', 
+          border: '1px solid #ffccc7',
+          padding: '15px', 
+          borderRadius: '4px',
+          color: '#cf1322',
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-word',
+          fontSize: '14px'
+        }}>
+          <strong>❌ 分析失敗：</strong>
+          <br />
+          {error}
+          <br />
+          <br />
+          <details style={{ marginTop: '10px', fontSize: '12px', cursor: 'pointer' }}>
+            <summary style={{ fontWeight: 'bold', color: '#cf1322' }}>診斷建議</summary>
+            <ul style={{ marginTop: '10px', paddingLeft: '20px' }}>
+              <li>檢查 .env.local 中 OPENROUTER_API_KEY 是否正確（應以 sk-or-v1- 開頭）</li>
+              <li>訪問 <a href="https://openrouter.ai" target="_blank" rel="noopener noreferrer">openrouter.ai</a> 檢查 API 餘額</li>
+              <li>打開瀏覽器 F12 控制台查看完整錯誤信息</li>
+              <li>重新構建項目：npm run build</li>
+            </ul>
+          </details>
+        </div>
+      )}
 
       {/* 分析結果 */}
       {result && (

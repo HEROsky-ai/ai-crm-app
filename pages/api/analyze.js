@@ -4,7 +4,7 @@ import { saveRecord } from "@/services/storage";
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method not allowed' });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
@@ -18,7 +18,21 @@ export default async function handler(req, res) {
     const prompt = buildPrompt(chat_text, images);
 
     // 調用 AI
-    const aiText = await runAI(prompt);
+    let aiText;
+    try {
+      aiText = await runAI(prompt);
+    } catch (aiError) {
+      console.error('AI 調用失敗:', aiError);
+      return res.status(500).json({ 
+        error: `AI 服務錯誤: ${aiError.message || '無法連接到 OpenRouter，請檢查 API 密鑰'}` 
+      });
+    }
+
+    if (!aiText || aiText.trim() === '') {
+      return res.status(500).json({ 
+        error: 'AI 沒有返回結果，請檢查 OpenRouter API 餘額和密鑰' 
+      });
+    }
 
     // 解析 AI 響應
     let parsed;
@@ -41,7 +55,12 @@ export default async function handler(req, res) {
       created_at: new Date().toISOString()
     };
 
-    await saveRecord(recordData);
+    try {
+      await saveRecord(recordData);
+    } catch (saveError) {
+      console.error('保存記錄失敗:', saveError);
+      // 不中斷分析流程，只記錄警告
+    }
 
     // 回傳結果（包含完整度分類）
     res.status(200).json({
@@ -50,7 +69,7 @@ export default async function handler(req, res) {
     });
 
   } catch (err) {
-    console.error('Error:', err);
-    res.status(500).json({ error: err.message });
+    console.error('分析端點錯誤:', err);
+    res.status(500).json({ error: err.message || '未知錯誤' });
   }
 }
