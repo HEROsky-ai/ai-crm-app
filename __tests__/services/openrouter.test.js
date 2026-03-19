@@ -1,5 +1,3 @@
-jest.mock('node-fetch');
-
 import { analyzeWithOpenRouter } from '@/services/ai/openrouter';
 
 describe('OpenRouter Service', () => {
@@ -7,6 +5,7 @@ describe('OpenRouter Service', () => {
 
   beforeEach(() => {
     process.env.OPENROUTER_API_KEY = mockApiKey;
+    global.fetch = jest.fn();
     jest.clearAllMocks();
   });
 
